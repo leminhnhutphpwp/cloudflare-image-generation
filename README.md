@@ -53,3 +53,22 @@ Dự án đang được thiết lập quy trình CI/CD qua GitHub.
 3. Cloudflare sẽ **tự động Deploy** ngay khi nhánh `backend` có code mới (vì Branch control đã được cấu hình chọn nhánh backend làm Production).
 
 *(Nếu muốn deploy nhanh bằng tay, bạn có thể chạy skill `.opencode/skills/deploy.sh` hoặc gõ trực tiếp `npx wrangler deploy`).*
+
+## 🔰 Setup Lần Đầu (Dành cho Server mới hoặc Clone lại)
+
+Nếu bạn mang source code này qua một tài khoản Cloudflare mới, hoặc cài đặt lại từ đầu, bạn BẮT BUỘC phải thực hiện 2 bước sau để đảm bảo API hoạt động và không bị lỗi `Unauthorized`:
+
+1. **Đăng nhập Wrangler (Nếu chưa đăng nhập):**
+   ```bash
+   npx wrangler login
+   ```
+   *(Trình duyệt sẽ mở ra để bạn cấp quyền truy cập vào tài khoản Cloudflare).*
+
+2. **Khai báo biến bảo mật API_KEY:**
+   Tuyệt đối không lưu API Key vào file `wrangler.toml` hay trên giao diện dạng văn bản thường (Plain text). Bạn phải đẩy Key lên hệ thống Secret của Cloudflare bằng lệnh:
+   ```bash
+   npx wrangler secret put API_KEY
+   ```
+   Sau khi gõ lệnh trên, terminal sẽ yêu cầu bạn nhập giá trị. Hãy dán đoạn mã Key bí mật của bạn vào (VD: `sk-xxxxx...`) rồi ấn Enter.
+
+Chỉ cần thiết lập Secret 1 lần duy nhất. Sau đó bạn có thể dùng tính năng Auto Deploy của GitHub hoặc gõ `npx wrangler deploy` hàng ngàn lần mà không bao giờ bị mất Key.
