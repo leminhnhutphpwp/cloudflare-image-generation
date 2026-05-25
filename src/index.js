@@ -1,4 +1,4 @@
-// 📦 Helper function to return JSON responses
+// Helper function to return JSON responses
 const jsonResponse = (data, status = 200) => {
     return new Response(JSON.stringify(data), {
         status,
@@ -10,13 +10,13 @@ export default {
     async fetch(request, env) {
         const url = new URL(request.url);
 
-        // 1. 🔐 Authentication check
+        // 1. Authentication check
         const authHeader = request.headers.get("Authorization");
         if (authHeader !== `Bearer ${env.API_KEY}`) {
             return jsonResponse({ error: "Unauthorized: Invalid API Key" }, 401);
         }
 
-        // 2. 🚫 Route validation
+        // 2. Route validation
         if (request.method !== "POST" || url.pathname !== "/") {
             return jsonResponse({ error: "Method Not Allowed. Use POST /" }, 405);
         }
@@ -24,7 +24,7 @@ export default {
         try {
             const contentType = request.headers.get("Content-Type") || "";
 
-            // 3. 🔀 Routing based on Content-Type
+            // 3. Routing based on Content-Type
             if (contentType.includes("multipart/form-data")) {
                 // If it's a file upload, route to Image-to-Image editor
                 return await this.handleEditImage(request, env);
@@ -37,7 +37,7 @@ export default {
         }
     },
 
-    // 🎨 Handler: Create Image (Text-to-Image)
+    // Handler: Create Image (Text-to-Image)
     async handleGenerateImage(request, env) {
         const { prompt } = await request.json();
 
@@ -54,7 +54,7 @@ export default {
         });
     },
 
-    // ✂️ Handler: Edit Image (Image-to-Image)
+    // Handler: Edit Image (Image-to-Image)
     async handleEditImage(request, env) {
         const formData = await request.formData();
         const prompt = formData.get("prompt");
