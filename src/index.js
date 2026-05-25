@@ -1,8 +1,18 @@
-// Helper function to return JSON responses
+// CORS Headers for allowing web applications to call this API
+const corsHeaders = {
+    "Access-Control-Allow-Origin": "*",
+    "Access-Control-Allow-Methods": "POST, OPTIONS",
+    "Access-Control-Allow-Headers": "Content-Type, Authorization",
+};
+
+// Helper function to return JSON responses with CORS
 const jsonResponse = (data, status = 200) => {
     return new Response(JSON.stringify(data), {
         status,
-        headers: { "Content-Type": "application/json" },
+        headers: {
+            "Content-Type": "application/json",
+            ...corsHeaders
+        },
     });
 };
 
@@ -10,10 +20,9 @@ export default {
     async fetch(request, env) {
         const url = new URL(request.url);
 
-        // 1. Authentication check
-        const authHeader = request.headers.get("Authorization");
-        if (authHeader !== `Bearer ${env.API_KEY}`) {
-            return jsonResponse({ error: "Unauthorized: Invalid API Key" }, 401);
+        // 1. Handle CORS Preflight (OPTIONS request)
+        if (request.method === "OPTIONS") {
+            return new Response(null, { headers: corsHeaders });
         }
 
         // 2. Route validation
@@ -21,15 +30,21 @@ export default {
             return jsonResponse({ error: "Method Not Allowed. Use POST /" }, 405);
         }
 
+        // 3. Authentication check
+        const authHeader = request.headers.get("Authorization");
+        const expectedAuth = `Bearer ${env.API_KEY}`;
+        // Prevent timing attacks if possible, otherwise simple check
+        if (!authHeader || authHeader !== expectedAuth) {
+            return jsonResponse({ error: "Unauthorized: Invalid API Key" }, 401);
+        }
+
         try {
             const contentType = request.headers.get("Content-Type") || "";
 
-            // 3. Routing based on Content-Type
+            // 4. Routing based on Content-Type
             if (contentType.includes("multipart/form-data")) {
-                // If it's a file upload, route to Image-to-Image editor
                 return await this.handleEditImage(request, env);
             } else {
-                // If it's normal JSON text, route to Text-to-Image generator
                 return await this.handleGenerateImage(request, env);
             }
         } catch (err) {
@@ -45,12 +60,14 @@ export default {
             return jsonResponse({ error: "Prompt is required in JSON body" }, 400);
         }
 
-        // Model: Stable Diffusion XL Base 1.0
         const model = "@cf/bytedance/stable-diffusion-xl-lightning";
         const result = await env.AI.run(model, { prompt });
 
         return new Response(result, {
-            headers: { "Content-Type": "image/jpeg" },
+            headers: { 
+                "Content-Type": "image/jpeg",
+                ...corsHeaders
+            },
         });
     },
 
@@ -64,19 +81,26 @@ export default {
             return jsonResponse({ error: "Both 'prompt' and 'image' are required in FormData" }, 400);
         }
 
+        // 5. Security: Validate file size (e.g. max 5MB) to prevent Worker memory crash
+        const MAX_SIZE = 5 * 1024 * 1024; // 5MB
+        if (imageFile.size > MAX_SIZE) {
+            return jsonResponse({ error: "Image size exceeds 5MB limit" }, 413);
+        }
+
         const imageArrayBuffer = await imageFile.arrayBuffer();
         const imageBytes = [...new Uint8Array(imageArrayBuffer)];
 
-        // Model: Stable Diffusion v1-5 Image-to-Image
         const model = "@cf/runwayml/stable-diffusion-v1-5-img2img";
         const result = await env.AI.run(model, {
             prompt: prompt,
             image: imageBytes,
-            // strength: 0.5 // Default strength parameter
         });
 
         return new Response(result, {
-            headers: { "Content-Type": "image/jpeg" },
+            headers: { 
+                "Content-Type": "image/jpeg",
+                ...corsHeaders
+            },
         });
     }
 };
