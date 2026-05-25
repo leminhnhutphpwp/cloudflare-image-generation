@@ -46,7 +46,7 @@ export default {
         }
 
         // Model: Stable Diffusion XL Base 1.0
-        const model = "@cf/stabilityai/stable-diffusion-xl-base-1.0";
+        const model = "@cf/bytedance/stable-diffusion-xl-lightning";
         const result = await env.AI.run(model, { prompt });
 
         return new Response(result, {
