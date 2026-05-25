@@ -18,6 +18,11 @@ const MODEL_MAP = {
     "cf-sd-img2img": "@cf/runwayml/stable-diffusion-v1-5-img2img",
     // Black Forest Labs (FLUX)
     "cf-flux-2-klein": "@cf/black-forest-labs/flux-2-klein-9b",
+    // Lykon
+    "cf-dreamshaper": "@cf/lykon/dreamshaper-8-lcm",
+    // Leonardo.Ai
+    "cf-phoenix-1.0": "@cf/leonardo/phoenix-1.0",
+    "cf-lucid-origin": "@cf/leonardo/lucid-origin",
 };
 
 function isFlux(modelId) {
@@ -41,8 +46,12 @@ async function generateFlux(env, modelId, prompt, width = 1024, height = 1024) {
 
     // Flux returns JSON { image: "base64..." }
     if (typeof result === "object" && result.image) {
-        const binary = Uint8Array.from(atob(result.image), c => c.charCodeAt(0));
-        return binary.buffer;
+        const chars = atob(result.image);
+        const bytes = new Uint8Array(chars.length);
+        for (let i = 0; i < chars.length; i++) {
+            bytes[i] = chars.charCodeAt(i);
+        }
+        return bytes.buffer;
     }
     throw new Error("Flux returned unexpected format");
 }
@@ -64,8 +73,12 @@ async function editFlux(env, modelId, prompt, imageBytes, width = 1024, height =
     });
 
     if (typeof result === "object" && result.image) {
-        const binary = Uint8Array.from(atob(result.image), c => c.charCodeAt(0));
-        return binary.buffer;
+        const chars = atob(result.image);
+        const bytes = new Uint8Array(chars.length);
+        for (let i = 0; i < chars.length; i++) {
+            bytes[i] = chars.charCodeAt(i);
+        }
+        return bytes.buffer;
     }
     throw new Error("Flux edit returned unexpected format");
 }
@@ -83,9 +96,11 @@ export default {
         }
 
         const authHeader = request.headers.get("Authorization");
-        const expectedAuth = `Bearer ${env.API_KEY}`;
-        if (!authHeader || authHeader !== expectedAuth) {
-            return jsonResponse({ error: "Unauthorized: Invalid API Key" }, 401);
+        if (env.API_KEY) {
+            const expectedAuth = `Bearer ${env.API_KEY}`;
+            if (!authHeader || authHeader !== expectedAuth) {
+                return jsonResponse({ error: "Unauthorized: Invalid API Key" }, 401);
+            }
         }
 
         try {
