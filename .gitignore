@@ -1,0 +1,27 @@
+# Cloudflare Workers / Wrangler
+.wrangler/
+dist/
+worker/
+
+# Node.js
+node_modules/
+npm-debug.log
+yarn-error.log
+
+# Environment variables
+.env
+.env.local
+.env.*.local
+
+# Logs
+logs
+*.log
+
+# Editor & OS files
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
+.wrangler
+.opencode
+AGENTS.md
